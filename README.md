@@ -6,7 +6,6 @@ A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/s
 
 ## Features
 
-- **Clean glass-themed interface** — modern iOS-inspired design with focus on usability
 - **Multi-username search** — search multiple usernames at once, filter results per username
 - **Live results** — see matches appear in real time as they're found
 - **Category filtering** — filter results by site category (Social, Music, Gaming, etc.)
@@ -21,7 +20,7 @@ A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/s
 
 ## Installation
 
-1. Download the latest `Holmes_Setup.exe` from [Releases](https://github.com/MewMeow69/Holmes/releases)
+1. Download the latest `Holmes_Setup.exe` (offline setup requires no further download) from [Releases](https://github.com/MewMeow69/Holmes/releases)
 2. Run the installer — no configuration needed
 3. Launch Holmes from the Start Menu or Desktop shortcut
 
