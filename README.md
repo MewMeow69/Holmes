@@ -20,7 +20,7 @@ A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/s
 
 ## Installation
 
-1. Download the latest `Holmes_Setup.exe` (offline setup requires no further download) from [Releases](https://github.com/MewMeow69/Holmes/releases)
+1. Download the latest `Holmes_Setup.exe` from [Releases](https://github.com/MewMeow69/Holmes/releases)
 2. Run the installer — no configuration needed
 3. Launch Holmes from the Start Menu or Desktop shortcut
 
