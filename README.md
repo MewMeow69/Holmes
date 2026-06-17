@@ -23,7 +23,7 @@ A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/s
 ## Installation
 
 1. Download the latest `Holmes_Setup.exe` from [Releases](https://github.com/MewMeow69/Holmes/releases)
-2. Run the installer — no configuration needed
+2. Run the installer - no configuration needed
 3. Launch Holmes from the Start Menu or Desktop shortcut
 
 The app bundles everything it needs. No Python, no terminals, no setup.
@@ -34,7 +34,7 @@ The app bundles everything it needs. No Python, no terminals, no setup.
 
 Holmes is a GUI wrapper around the incredible [Sherlock](https://github.com/sherlock-project/sherlock) project by [Siddharth Dushantha](https://github.com/sdushantha) and [contributors](https://github.com/sherlock-project/sherlock/graphs/contributors).
 
-Sherlock does the heavy lifting crawling 400+ websites to check if a username exists. Holmes wraps that power in a desktop app anyone can use.
+Sherlock does the heavy lifting crawling 400+ websites to check if a username exists. Holmes wraps that power in a desktop app.
 
 If you find Holmes useful, please star both projects:
 - [sherlock-project/sherlock](https://github.com/sherlock-project/sherlock)
@@ -64,6 +64,6 @@ npm install
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT - see [LICENSE](LICENSE) for details.
 
 Sherlock is available under the [MIT License](https://github.com/sherlock-project/sherlock/blob/master/LICENSE).
