@@ -1,6 +1,6 @@
 # Holmes
 
-A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/sherlock), the open-source username search tool. Find social media profiles across 400+ websites — no terminal required.
+A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/sherlock), the open-source username search tool. Find social media profiles across 400+ websites
 
 <img width="2188" height="718" alt="Holmes" src="https://github.com/user-attachments/assets/5dfb894b-63fb-44bc-aca0-6267bc260e50" />
 
