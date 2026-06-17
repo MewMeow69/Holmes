@@ -50,3 +50,11 @@ export async function pickFolder(): Promise<string | null> {
   const selected = await openDialog({ directory: true, multiple: false, title: "Select output folder" });
   return selected ?? null;
 }
+
+export async function checkSidecarExists(): Promise<boolean> {
+  return invoke("check_sidecar_exists");
+}
+
+export async function ensureSidecar(): Promise<void> {
+  await invoke("ensure_sidecar");
+}

@@ -1,22 +1,23 @@
 use regex::Regex;
+use std::io::{BufRead, BufReader};
+use std::process::{Command, Stdio, Child};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 use tauri::{AppHandle, Emitter};
-use tauri_plugin_shell::ShellExt;
-use tauri_plugin_shell::process::CommandEvent;
 
 use crate::commands::{SearchOptions, SearchResult};
+use crate::download;
 
 pub struct SherlockProcess {
-    child: Option<tauri_plugin_shell::process::CommandChild>,
+    child: Option<Child>,
     cancelled: Arc<AtomicBool>,
 }
 
 impl SherlockProcess {
     pub fn cancel(mut self) {
         self.cancelled.store(true, Ordering::SeqCst);
-        if let Some(child) = self.child.take() {
+        if let Some(ref mut child) = self.child {
             let _ = child.kill();
         }
     }
@@ -50,12 +51,24 @@ pub fn start_search(
             args.push(p.clone());
         }
     }
-    if options.use_tor { args.push("--tor".into()); }
-    if options.include_nsfw { args.push("--nsfw".into()); }
-    if options.verbose { args.push("--verbose".into()); }
-    if options.print_all { args.push("--print-all".into()); }
-    if options.browse_found { args.push("--browse".into()); }
-    if options.use_local_data { args.push("--local".into()); }
+    if options.use_tor {
+        args.push("--tor".into());
+    }
+    if options.include_nsfw {
+        args.push("--nsfw".into());
+    }
+    if options.verbose {
+        args.push("--verbose".into());
+    }
+    if options.print_all {
+        args.push("--print-all".into());
+    }
+    if options.browse_found {
+        args.push("--browse".into());
+    }
+    if options.use_local_data {
+        args.push("--local".into());
+    }
     if let Some(ref j) = options.custom_json {
         if !j.is_empty() {
             args.push("--json".into());
@@ -80,120 +93,78 @@ pub fn start_search(
         }
     }
 
-    let sidecar = app.shell().sidecar("sherlock-cli")
-        .map_err(|e| format!("{e}"))?;
-    let sidecar = sidecar.current_dir(std::env::temp_dir());
-    let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    let sidecar = sidecar.args(&arg_refs);
+    let sidecar_exe = download::sidecar_path();
+    let mut child = Command::new(&sidecar_exe)
+        .args(&args)
+        .current_dir(std::env::temp_dir())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn sidecar at {}: {e}", sidecar_exe.display()))?;
 
-    let (mut rx, child) = sidecar.spawn()
-        .map_err(|e| format!("{e}"))?;
+    let stdout = child.stdout.take().unwrap();
+    let stderr = child.stderr.take().unwrap();
 
     let usernames_clone = usernames.clone();
     let options_clone = options.clone();
     let app_clone = app.clone();
+    let cancel_flag2 = cancel_flag.clone();
 
-    tauri::async_runtime::spawn(async move {
+    // stdout parsing thread
+    std::thread::spawn(move || {
         let start = Instant::now();
         let found_re = Regex::new(r"\[\+\]\s*(.+?):\s*(https?://\S+)").unwrap();
         let not_found_re = Regex::new(r"\[\-\]\s*(.+?):").unwrap();
         let current_user = usernames_clone.first().cloned().unwrap_or_default();
         let mut results: Vec<SearchResult> = Vec::new();
-        let mut line_buffer = String::new();
 
-        'event_loop: loop {
+        let reader = BufReader::new(stdout);
+        for line in reader.lines() {
             if cancel_flag.load(Ordering::SeqCst) {
                 break;
             }
-            let event = match rx.recv().await {
-                Some(e) => e,
-                None => break,
+            let line = match line {
+                Ok(l) => l,
+                Err(_) => break,
             };
-            match event {
-                CommandEvent::Stdout(bytes) => {
-                    use std::fmt::Write;
-                    let _ = write!(line_buffer, "{}", String::from_utf8_lossy(&bytes));
-                    while let Some(pos) = line_buffer.find('\n') {
-                        let line = line_buffer[..pos].trim().to_string();
-                        line_buffer = line_buffer[pos + 1..].to_string();
-                        if line.is_empty() { continue; }
-
-                        if let Some(caps) = found_re.captures(&line) {
-                            let site = caps[1].trim().to_string();
-                            let url = caps[2].trim().to_string();
-                            results.push(SearchResult {
-                                username: current_user.clone(),
-                                site: site.clone(),
-                                url: url.clone(),
-                                found: true,
-                            });
-                            let _ = app_clone.emit("search:found", serde_json::json!({
-                                "username": current_user,
-                                "site": site,
-                                "url": url,
-                            }));
-                        } else if let Some(caps) = not_found_re.captures(&line) {
-                            let site = caps[1].trim().to_string();
-                            results.push(SearchResult {
-                                username: current_user.clone(),
-                                site: site.clone(),
-                                url: String::new(),
-                                found: false,
-                            });
-                            let _ = app_clone.emit("search:not_found", serde_json::json!({
-                                "username": current_user,
-                                "site": site,
-                            }));
-                        } else {
-                            if line.starts_with("[*]") || line.contains("Checking username") {
-                                continue;
-                            }
-                            let _ = app_clone.emit("search:progress", serde_json::json!({
-                                "text": line
-                            }));
-                        }
-                    }
-                }
-                CommandEvent::Stderr(bytes) => {
-                    let text = String::from_utf8_lossy(&bytes).to_string();
-                    let _ = app_clone.emit("search:progress", serde_json::json!({ "text": text }));
-                }
-                CommandEvent::Terminated(_) => break 'event_loop,
-                _ => {}
+            let line = line.trim().to_string();
+            if line.is_empty() {
+                continue;
             }
-        }
 
-        // Flush remaining buffer after sidecar terminates
-        if !cancel_flag.load(Ordering::SeqCst) {
-            let leftover = line_buffer.trim().to_string();
-            if !leftover.is_empty() {
-                if let Some(caps) = found_re.captures(&leftover) {
-                    let site = caps[1].trim().to_string();
-                    let url = caps[2].trim().to_string();
-                    results.push(SearchResult {
-                        username: current_user.clone(),
-                        site: site.clone(),
-                        url: url.clone(),
-                        found: true,
-                    });
-                    let _ = app_clone.emit("search:found", serde_json::json!({
-                        "username": current_user,
-                        "site": site,
-                        "url": url,
-                    }));
-                } else if let Some(caps) = not_found_re.captures(&leftover) {
-                    let site = caps[1].trim().to_string();
-                    results.push(SearchResult {
-                        username: current_user.clone(),
-                        site: site.clone(),
-                        url: String::new(),
-                        found: false,
-                    });
-                    let _ = app_clone.emit("search:not_found", serde_json::json!({
-                        "username": current_user,
-                        "site": site,
-                    }));
+            if let Some(caps) = found_re.captures(&line) {
+                let site = caps[1].trim().to_string();
+                let url = caps[2].trim().to_string();
+                results.push(SearchResult {
+                    username: current_user.clone(),
+                    site: site.clone(),
+                    url: url.clone(),
+                    found: true,
+                });
+                let _ = app_clone.emit("search:found", serde_json::json!({
+                    "username": current_user,
+                    "site": site,
+                    "url": url,
+                }));
+            } else if let Some(caps) = not_found_re.captures(&line) {
+                let site = caps[1].trim().to_string();
+                results.push(SearchResult {
+                    username: current_user.clone(),
+                    site: site.clone(),
+                    url: String::new(),
+                    found: false,
+                });
+                let _ = app_clone.emit("search:not_found", serde_json::json!({
+                    "username": current_user,
+                    "site": site,
+                }));
+            } else {
+                if line.starts_with("[*]") || line.contains("Checking username") {
+                    continue;
                 }
+                let _ = app_clone.emit("search:progress", serde_json::json!({
+                    "text": line
+                }));
             }
         }
 
@@ -206,7 +177,26 @@ pub fn start_search(
             "found": found,
             "stopped": stopped,
         }));
-        let _ = crate::history::add_entry(&usernames_clone, &results, duration, &options_clone, stopped);
+        let _ = crate::history::add_entry(
+            &usernames_clone, &results, duration, &options_clone, stopped,
+        );
+    });
+
+    // stderr forwarding thread
+    let app_clone2 = app.clone();
+    std::thread::spawn(move || {
+        let reader = BufReader::new(stderr);
+        for line in reader.lines() {
+            if cancel_flag2.load(Ordering::SeqCst) {
+                break;
+            }
+            if let Ok(text) = line {
+                let _ = app_clone2.emit(
+                    "search:progress",
+                    serde_json::json!({ "text": text }),
+                );
+            }
+        }
     });
 
     Ok(SherlockProcess {

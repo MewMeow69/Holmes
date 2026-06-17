@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import type { Page, SearchResult, SearchOptions, Theme } from "./lib/types";
-import { searchUsernames, cancelSearch } from "./lib/tauri";
+import { searchUsernames, cancelSearch, checkSidecarExists, ensureSidecar } from "./lib/tauri";
 import SearchPage from "./pages/SearchPage";
 import ResultsPage from "./pages/ResultsPage";
 import HistoryPage from "./pages/HistoryPage";
 import BottomNav from "./components/BottomNav";
 import SettingsSheet from "./components/SettingsSheet";
 import TitleBar from "./components/TitleBar";
+import SidecarDownloader from "./components/SidecarDownloader";
 
 function getSavedTheme(): Theme {
   const saved = localStorage.getItem("theme");
@@ -26,12 +27,27 @@ export default function App() {
   const [historyRefresh, setHistoryRefresh] = useState(0);
   const [mouse, setMouse] = useState({ x: 0.5, y: 0.5 });
   const [theme, setTheme] = useState<Theme>(getSavedTheme);
+  const [sidecarReady, setSidecarReady] = useState(false);
+  const [checkingSidecar, setCheckingSidecar] = useState(true);
   const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    checkSidecarExists()
+      .then((exists) => {
+        if (exists) {
+          setSidecarReady(true);
+        } else {
+          ensureSidecar().catch(console.error);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setCheckingSidecar(false));
+  }, []);
 
   useEffect(() => {
     let raf: number;
@@ -118,8 +134,16 @@ export default function App() {
       className="app-shell"
       style={{ "--mouse-x": mouse.x, "--mouse-y": mouse.y } as React.CSSProperties}
     >
-      <TitleBar />
-      <main className="app-content">
+      {checkingSidecar ? (
+        <div className="empty-state" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          Loading...
+        </div>
+      ) : !sidecarReady ? (
+        <SidecarDownloader onDone={() => setSidecarReady(true)} />
+      ) : (
+        <>
+          <TitleBar />
+          <main className="app-content">
         {page === "search" && !searching && results.length === 0 && (
           <SearchPage onSearch={handleSearch} searching={false} />
         )}
@@ -155,6 +179,8 @@ export default function App() {
       />
 
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        </>
+      )}
     </div>
   );
 }

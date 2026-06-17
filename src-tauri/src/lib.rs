@@ -3,6 +3,7 @@ mod sherlock;
 mod history;
 mod config;
 mod sites;
+mod download;
 
 use commands::SearchState;
 pub use commands::SherlockProcess;
@@ -25,6 +26,8 @@ pub fn run() {
             commands::load_config,
             commands::save_config,
             commands::check_sherlock,
+            commands::check_sidecar_exists,
+            commands::ensure_sidecar,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -24,5 +24,15 @@ if (-not $env:LIB) {
     Write-Warning "MSVC not auto-detected. Run from a Developer Command Prompt or install VS Build Tools."
 }
 
+# Copy sidecar for dev mode
+$targetDir = "$env:APPDATA\Holmes"
+New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+$sidecarSrc = "$root\src-tauri\binaries\sherlock-cli-x86_64-pc-windows-msvc.exe"
+$sidecarDst = "$targetDir\sherlock-cli.exe"
+if (Test-Path $sidecarSrc) {
+    Copy-Item -LiteralPath $sidecarSrc -Destination $sidecarDst -Force
+    Write-Output "Sidecar ready at $sidecarDst"
+}
+
 Set-Location "$root\src-tauri"
 npx tauri dev

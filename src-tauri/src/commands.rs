@@ -5,6 +5,7 @@ use tauri::{AppHandle, State};
 use crate::sherlock;
 use crate::history;
 use crate::config;
+use crate::download;
 pub use crate::sherlock::SherlockProcess;
 pub use crate::sites::SiteInfo;
 
@@ -124,4 +125,15 @@ pub async fn save_config(cfg: serde_json::Value) -> Result<(), String> {
 #[tauri::command]
 pub async fn check_sherlock() -> Result<bool, String> {
     Ok(crate::sites::check_sherlock_installed())
+}
+
+#[tauri::command]
+pub async fn check_sidecar_exists() -> Result<bool, String> {
+    Ok(download::sidecar_exists())
+}
+
+#[tauri::command]
+pub async fn ensure_sidecar(app: AppHandle) -> Result<(), String> {
+    let cancel = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    download::ensure_sidecar(app, cancel).map(|_| ())
 }
