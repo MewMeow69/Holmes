@@ -8,15 +8,15 @@ A user-friendly desktop GUI for [Sherlock](https://github.com/sherlock-project/s
 
 ## Features
 
-- **Multi-username search** — search multiple usernames at once, filter results per username
-- **Live results** — see matches appear in real time as they're found
-- **Category filtering** — filter results by site category (Social, Music, Gaming, etc.)
-- **Search history** — every search is saved locally with full results, timestamps, and stats
-- **Re-run past searches** — replay any previous search with one click
-- **Customizable settings** — timeout, proxy, Tor routing, output formats (TXT, CSV, XLSX)
-- **Export results** — save found profiles to your preferred format and directory
-- **NSFW toggle** — optionally include adult sites in searches
-- **Cross-platform** — Windows installer with Start Menu and Desktop shortcuts
+- **Multi-username search** - search multiple usernames at once, filter results per username
+- **Live results** - see matches appear in real time as they're found
+- **Category filtering** - filter results by site category (Social, Music, Gaming, etc.)
+- **Search history** - every search is saved locally with full results, timestamps, and stats
+- **Re-run past searches** - replay any previous search with one click
+- **Customizable settings** - timeout, proxy, Tor routing, output formats (TXT, CSV, XLSX)
+- **Export results** - save found profiles to your preferred format and directory
+- **NSFW toggle** - optionally include adult sites in searches
+- **Cross-platform** - Windows installer with Start Menu and Desktop shortcuts
 
 ---
 
@@ -34,7 +34,7 @@ The app bundles everything it needs. No Python, no terminals, no setup.
 
 Holmes is a GUI wrapper around the incredible [Sherlock](https://github.com/sherlock-project/sherlock) project by [Siddharth Dushantha](https://github.com/sdushantha) and [contributors](https://github.com/sherlock-project/sherlock/graphs/contributors).
 
-Sherlock does the heavy lifting — crawling 400+ websites to check if a username exists. Holmes wraps that power in a desktop app anyone can use.
+Sherlock does the heavy lifting crawling 400+ websites to check if a username exists. Holmes wraps that power in a desktop app anyone can use.
 
 If you find Holmes useful, please star both projects:
 - [sherlock-project/sherlock](https://github.com/sherlock-project/sherlock)
