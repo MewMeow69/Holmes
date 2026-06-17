@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 
 const SIDECAR_URL: &str =
-    "https://github.com/MewMeow69/Holmes/releases/latest/download/sherlock-cli.exe";
+    "https://raw.githubusercontent.com/MewMeow69/Holmes/main/src-tauri/binaries/sherlock-cli-x86_64-pc-windows-msvc.exe";
 
 fn sidecar_dir() -> PathBuf {
     PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("Holmes")
