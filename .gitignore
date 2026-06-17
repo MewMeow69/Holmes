@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+dist/
+
+# Build artifacts
+src-tauri/target/
+build/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Output files
+*.msi
+*.exe.sig
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.spec
+
+# Temp
+*.tmp
+*.log
